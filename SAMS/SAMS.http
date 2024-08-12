@@ -1,0 +1,6 @@
+@SAMS_HostAddress = http://localhost:5028
+
+GET {{SAMS_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
