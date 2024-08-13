@@ -1,12 +1,21 @@
-﻿namespace SAMS.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace SAMS.Models;
+
+public partial class User
 {
-    public class User
-    {
-        public int UserID { get; set; }
-        public string Name { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string UserType { get; set; }
-        public Lecturer Lecturer { get; set; }
-    }
+    public int UserID { get; set; }
+
+    public string? Name { get; set; }
+
+    public string Email { get; set; } = null!;
+
+    public string Password { get; set; } = null!;
+
+    public string UserType { get; set; } = null!;
+
+    public virtual Lecturer? Lecturer { get; set; }
+
+    public virtual Student? Student { get; set; }
 }
