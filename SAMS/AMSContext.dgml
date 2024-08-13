@@ -5,9 +5,18 @@
 Relational:MaxIdentifierLength: 128
 RelationshipDiscoveryConvention:InverseNavigationCandidates: System.Collections.Generic.Dictionary`2[System.Type,System.Collections.Generic.SortedSet`1[System.Type]]
 SqlServer:ValueGenerationStrategy: IdentityColumn" Category="Model" Group="Expanded" />
+<Node Id = "Attendance" Label="Attendance" Name="Attendance" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="Relational:Schema:
+Relational:TableName: Attendance
+RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutable.ImmutableSortedDictionary`2[System.Reflection.PropertyInfo,System.ValueTuple`2[System.Type,System.Nullable`1[System.Boolean]]]" Category="EntityType" Group="Expanded" />
 <Node Id = "Course" Label="Course" Name="Course" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="Relational:Schema:
 Relational:TableName: Course
 RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutable.ImmutableSortedDictionary`2[System.Reflection.PropertyInfo,System.ValueTuple`2[System.Type,System.Nullable`1[System.Boolean]]]" Category="EntityType" Group="Expanded" />
+<Node Id = "Attendance.AttendanceID" Label="AttendanceID (int)" Name="AttendanceID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="SqlServer:ValueGenerationStrategy: IdentityColumn" IsPrimaryKey="True" IsForeignKey="False" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
+<Node Id = "Attendance.Session" Label="Session (1)" Name="Session" Category="Navigation Property" Type="Session"  Field="" Dependent="" Principal="Session" Inverse="Attendances" PropertyAccessMode="PropertyAccessMode.Default" />
+<Node Id = "Attendance.User" Label="User (1)" Name="User" Category="Navigation Property" Type="User"  Field="" Dependent="" Principal="User" Inverse="Attendances" PropertyAccessMode="PropertyAccessMode.Default" />
+<Node Id = "Attendance.CheckInTime" Label="CheckInTime (DateTime)" Name="CheckInTime" Category="Property Required" Type="DateTime" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="False" IsForeignKey="False" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
+<Node Id = "Attendance.SessionID" Label="SessionID (int)" Name="SessionID" Category="Property Foreign" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="False" IsForeignKey="True" IsRequired="True" IsIndexed="True" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
+<Node Id = "Attendance.UserID" Label="UserID (int)" Name="UserID" Category="Property Foreign" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="False" IsForeignKey="True" IsRequired="True" IsIndexed="True" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
 <Node Id = "CourseTime" Label="CourseTime" Name="CourseTime" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="Relational:CheckConstraints: System.Collections.Generic.SortedDictionary`2[System.String,Microsoft.EntityFrameworkCore.Metadata.ICheckConstraint]
 Relational:Schema:
 Relational:TableName: CourseTime
@@ -41,13 +50,14 @@ RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutab
 <Node Id = "Session" Label="Session" Name="Session" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="Relational:Schema:
 Relational:TableName: Session
 RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutable.ImmutableSortedDictionary`2[System.Reflection.PropertyInfo,System.ValueTuple`2[System.Type,System.Nullable`1[System.Boolean]]]" Category="EntityType" Group="Expanded" />
-<Node Id = "Lecturer.UserID" Label="UserID (int)" Name="UserID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="True" IsForeignKey="True" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
+<Node Id = "Lecturer.LecturerID" Label="LecturerID (int)" Name="LecturerID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="True" IsForeignKey="True" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
 <Node Id = "Lecturer.Courses" Label="Courses (*)" Name="Courses" Category="Navigation Collection" Type="ICollection&lt;Course&gt;"  Field="" Dependent="Course" Principal="" Inverse="Lecturer" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "Lecturer.User" Label="User (1)" Name="User" Category="Navigation Property" Type="User"  Field="" Dependent="" Principal="User" Inverse="Lecturer" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "Student" Label="Student" Name="Student" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="Relational:Schema:
 Relational:TableName: Student
 RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutable.ImmutableSortedDictionary`2[System.Reflection.PropertyInfo,System.ValueTuple`2[System.Type,System.Nullable`1[System.Boolean]]]" Category="EntityType" Group="Expanded" />
 <Node Id = "Session.SessionID" Label="SessionID (int)" Name="SessionID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="SqlServer:ValueGenerationStrategy: IdentityColumn" IsPrimaryKey="True" IsForeignKey="False" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
+<Node Id = "Session.Attendances" Label="Attendances (*)" Name="Attendances" Category="Navigation Collection" Type="ICollection&lt;Attendance&gt;"  Field="" Dependent="Attendance" Principal="" Inverse="Session" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "Session.Course" Label="Course (1)" Name="Course" Category="Navigation Property" Type="Course"  Field="" Dependent="" Principal="Course" Inverse="Sessions" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "Session.LectureHall" Label="LectureHall (1)" Name="LectureHall" Category="Navigation Property" Type="LectureHall"  Field="" Dependent="" Principal="LectureHall" Inverse="Sessions" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "Session.CourseID" Label="CourseID (int)" Name="CourseID" Category="Property Foreign" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="False" IsForeignKey="True" IsRequired="True" IsIndexed="True" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
@@ -58,11 +68,12 @@ RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutab
 <Node Id = "User" Label="User" Name="User" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="Relational:Schema:
 Relational:TableName: User
 RelationshipDiscoveryConvention:NavigationCandidates: System.Collections.Immutable.ImmutableSortedDictionary`2[System.Reflection.PropertyInfo,System.ValueTuple`2[System.Type,System.Nullable`1[System.Boolean]]]" Category="EntityType" Group="Expanded" />
-<Node Id = "Student.UserID" Label="UserID (int)" Name="UserID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="True" IsForeignKey="True" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
+<Node Id = "Student.StudentID" Label="StudentID (int)" Name="StudentID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="True" IsForeignKey="True" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
 <Node Id = "Student.User" Label="User (1)" Name="User" Category="Navigation Property" Type="User"  Field="" Dependent="" Principal="User" Inverse="Student" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "Student.CurrentSemester" Label="CurrentSemester (int?)" Name="CurrentSemester" Category="Property Optional" Type="int?" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="" IsPrimaryKey="False" IsForeignKey="False" IsRequired="False" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
 <Node Id = "User" Label="User" Name="User" BaseClass="" IsAbstract="False" ChangeTrackingStrategy="ChangeTrackingStrategy.Snapshot"  Annotations="" Category="EntityType" Group="Expanded" />
 <Node Id = "User.UserID" Label="UserID (int)" Name="UserID" Category="Property Primary" Type="int" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="SqlServer:ValueGenerationStrategy: IdentityColumn" IsPrimaryKey="True" IsForeignKey="False" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="ValueGenerated.OnAdd" />
+<Node Id = "User.Attendances" Label="Attendances (*)" Name="Attendances" Category="Navigation Collection" Type="ICollection&lt;Attendance&gt;"  Field="" Dependent="Attendance" Principal="" Inverse="User" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "User.Lecturer" Label="Lecturer (1)" Name="Lecturer" Category="Navigation Property" Type="Lecturer"  Field="" Dependent="Lecturer" Principal="" Inverse="User" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "User.Student" Label="Student (1)" Name="Student" Category="Navigation Property" Type="Student"  Field="" Dependent="Student" Principal="" Inverse="User" PropertyAccessMode="PropertyAccessMode.Default" />
 <Node Id = "User.Email" Label="Email (string)" Name="Email" Category="Property Required" Type="string" MaxLength="None" Field="" PropertyAccessMode="PropertyAccessMode.Default" BeforeSaveBehavior="PropertySaveBehavior.Save" AfterSaveBehavior="PropertySaveBehavior.Save" Annotations="Unicode: False" IsPrimaryKey="False" IsForeignKey="False" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
@@ -73,13 +84,22 @@ Unicode: False" IsPrimaryKey="False" IsForeignKey="False" IsRequired="True" IsIn
 Unicode: False" IsPrimaryKey="False" IsForeignKey="False" IsRequired="True" IsIndexed="False" IsShadow="False" IsAlternateKey="False" IsConcurrencyToken="False" IsUnicode="True" ValueGenerated="None" />
   </Nodes>
   <Links>
+<Link Source = "IModel" Target="Attendance" Category="Contains" />
 <Link Source = "IModel" Target="Course" Category="Contains" />
+<Link Source = "Attendance" Target="Attendance.Session" Category="Contains" />
+<Link Source = "Attendance" Target="Attendance.User" Category="Contains" />
+<Link Source = "Attendance" Target="Attendance.AttendanceID" Category="Contains" />
+<Link Source="Attendance" Target="Session" From="Attendance.SessionID" To="Session.SessionID" Name="Attendance -> Session" Annotations="Relational:Name: FK_Course_Session" IsUnique="False" Label="1:*" Category="Foreign Key" />
+<Link Source="Attendance" Target="User" From="Attendance.UserID" To="User.UserID" Name="Attendance -> User" Annotations="Relational:Name: FK_User_userID" IsUnique="False" Label="1:*" Category="Foreign Key" />
+<Link Source = "Attendance" Target="Attendance.CheckInTime" Category="Contains" />
+<Link Source = "Attendance" Target="Attendance.SessionID" Category="Contains" />
+<Link Source = "Attendance" Target="Attendance.UserID" Category="Contains" />
 <Link Source = "IModel" Target="CourseTime" Category="Contains" />
 <Link Source = "Course" Target="Course.CourseTimes" Category="Contains" />
 <Link Source = "Course" Target="Course.Lecturer" Category="Contains" />
 <Link Source = "Course" Target="Course.Sessions" Category="Contains" />
 <Link Source = "Course" Target="Course.CourseID" Category="Contains" />
-<Link Source="Course" Target="Lecturer" From="Course.LecturerID" To="Lecturer.UserID" Name="Course -> Lecturer" Annotations="Relational:Name: FK_Course_Lecturer" IsUnique="False" Label="1:*" Category="Foreign Key" />
+<Link Source="Course" Target="Lecturer" From="Course.LecturerID" To="Lecturer.LecturerID" Name="Course -> Lecturer" Annotations="Relational:Name: FK_Course_Lecturer" IsUnique="False" Label="1:*" Category="Foreign Key" />
 <Link Source = "Course" Target="Course.CourseName" Category="Contains" />
 <Link Source = "Course" Target="Course.LecturerID" Category="Contains" />
 <Link Source = "Course" Target="Course.Semester" Category="Contains" />
@@ -102,9 +122,10 @@ Unicode: False" IsPrimaryKey="False" IsForeignKey="False" IsRequired="True" IsIn
 <Link Source = "IModel" Target="Session" Category="Contains" />
 <Link Source = "Lecturer" Target="Lecturer.Courses" Category="Contains" />
 <Link Source = "Lecturer" Target="Lecturer.User" Category="Contains" />
-<Link Source = "Lecturer" Target="Lecturer.UserID" Category="Contains" />
-<Link Source="Lecturer" Target="User" From="Lecturer.UserID" To="User.UserID" Name="Lecturer -> User" Annotations="Relational:Name: FK_Lecturer_User" IsUnique="True" Label="1:1" Category="Foreign Key" />
+<Link Source = "Lecturer" Target="Lecturer.LecturerID" Category="Contains" />
+<Link Source="Lecturer" Target="User" From="Lecturer.LecturerID" To="User.UserID" Name="Lecturer -> User" Annotations="Relational:Name: FK_Lecturer_User" IsUnique="True" Label="1:1" Category="Foreign Key" />
 <Link Source = "IModel" Target="Student" Category="Contains" />
+<Link Source = "Session" Target="Session.Attendances" Category="Contains" />
 <Link Source = "Session" Target="Session.Course" Category="Contains" />
 <Link Source = "Session" Target="Session.LectureHall" Category="Contains" />
 <Link Source = "Session" Target="Session.SessionID" Category="Contains" />
@@ -117,10 +138,11 @@ Unicode: False" IsPrimaryKey="False" IsForeignKey="False" IsRequired="True" IsIn
 <Link Source = "Session" Target="Session.SessionCode" Category="Contains" />
 <Link Source = "IModel" Target="User" Category="Contains" />
 <Link Source = "Student" Target="Student.User" Category="Contains" />
-<Link Source = "Student" Target="Student.UserID" Category="Contains" />
-<Link Source="Student" Target="User" From="Student.UserID" To="User.UserID" Name="Student -> User" Annotations="Relational:Name: FK_Student_User" IsUnique="True" Label="1:1" Category="Foreign Key" />
+<Link Source = "Student" Target="Student.StudentID" Category="Contains" />
+<Link Source="Student" Target="User" From="Student.StudentID" To="User.UserID" Name="Student -> User" Annotations="Relational:Name: FK_Student_User" IsUnique="True" Label="1:1" Category="Foreign Key" />
 <Link Source = "Student" Target="Student.CurrentSemester" Category="Contains" />
 <Link Source = "IModel" Target="User" Category="Contains" />
+<Link Source = "User" Target="User.Attendances" Category="Contains" />
 <Link Source = "User" Target="User.Lecturer" Category="Contains" />
 <Link Source = "User" Target="User.Student" Category="Contains" />
 <Link Source = "User" Target="User.UserID" Category="Contains" />

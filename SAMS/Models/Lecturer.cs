@@ -5,7 +5,7 @@ namespace SAMS.Models;
 
 public partial class Lecturer
 {
-    public int UserID { get; set; }
+    public int LecturerID { get; set; }
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 

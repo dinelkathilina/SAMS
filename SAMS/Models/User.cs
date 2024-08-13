@@ -18,4 +18,6 @@ public partial class User
     public virtual Lecturer? Lecturer { get; set; }
 
     public virtual Student? Student { get; set; }
+
+    public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 }
