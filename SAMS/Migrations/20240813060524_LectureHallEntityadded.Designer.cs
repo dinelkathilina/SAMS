@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAMS.Data;
 
@@ -11,9 +12,11 @@ using SAMS.Data;
 namespace SAMS.Migrations
 {
     [DbContext(typeof(AMSContext))]
-    partial class AMSContextModelSnapshot : ModelSnapshot
+    [Migration("20240813060524_LectureHallEntityadded")]
+    partial class LectureHallEntityadded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,40 +122,6 @@ namespace SAMS.Migrations
                     b.ToTable("Lecturer", (string)null);
                 });
 
-            modelBuilder.Entity("SAMS.Models.Session", b =>
-                {
-                    b.Property<int>("SessionID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SessionID"));
-
-                    b.Property<int>("CourseID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpirationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LectureHallID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SessionCode")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(max)");
-
-                    b.HasKey("SessionID");
-
-                    b.HasIndex("CourseID");
-
-                    b.HasIndex("LectureHallID");
-
-                    b.ToTable("Session", (string)null);
-                });
-
             modelBuilder.Entity("SAMS.Models.Student", b =>
                 {
                     b.Property<int>("UserID")
@@ -234,25 +203,6 @@ namespace SAMS.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SAMS.Models.Session", b =>
-                {
-                    b.HasOne("SAMS.Models.Course", "Course")
-                        .WithMany("Sessions")
-                        .HasForeignKey("CourseID")
-                        .IsRequired()
-                        .HasConstraintName("FK_Course_Course");
-
-                    b.HasOne("SAMS.Models.LectureHall", "LectureHall")
-                        .WithMany("Sessions")
-                        .HasForeignKey("LectureHallID")
-                        .IsRequired()
-                        .HasConstraintName("FK_Course_LecturerHall");
-
-                    b.Navigation("Course");
-
-                    b.Navigation("LectureHall");
-                });
-
             modelBuilder.Entity("SAMS.Models.Student", b =>
                 {
                     b.HasOne("SAMS.Models.User", "User")
@@ -267,13 +217,6 @@ namespace SAMS.Migrations
             modelBuilder.Entity("SAMS.Models.Course", b =>
                 {
                     b.Navigation("CourseTimes");
-
-                    b.Navigation("Sessions");
-                });
-
-            modelBuilder.Entity("SAMS.Models.LectureHall", b =>
-                {
-                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("SAMS.Models.Lecturer", b =>

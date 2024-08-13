@@ -17,4 +17,5 @@ public partial class Course
 
 
     public virtual ICollection<CourseTime> CourseTimes { get; set; } = new List<CourseTime>();
+    public virtual ICollection<Session> Sessions { get; set; } = new List<Session>();
 }

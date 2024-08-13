@@ -20,6 +20,8 @@ public partial class AMSContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<CourseTime> CourseTimes { get; set; }
+    public virtual DbSet<LectureHall> LectureHalls { get; set; }
+    public virtual DbSet<Session> Sessions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,6 +91,36 @@ public partial class AMSContext : DbContext
                 .HasConstraintName("FK_Course_CourseID");
 
             entity.ToTable(tb => tb.HasCheckConstraint("CK_CourseTime_Day", "[Day] BETWEEN 0 AND 6"));
+
+
+        });
+
+        modelBuilder.Entity<LectureHall>(entity =>
+        {
+            entity.ToTable("LectureHall");
+
+            entity.Property(e => e.Name).IsUnicode(false);
+
+            
+
+
+        });
+
+        modelBuilder.Entity<Session>(entity =>
+        {
+            entity.ToTable("Session");
+
+            entity.Property(e => e.SessionCode).IsUnicode(false);
+
+            entity.HasOne(d => d.LectureHall).WithMany(p => p.Sessions)
+                .HasForeignKey(d => d.LectureHallID)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Course_LecturerHall");
+            
+            entity.HasOne(d => d.Course).WithMany(p => p.Sessions)
+                .HasForeignKey(d => d.CourseID)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Course_Course");
 
 
         });
