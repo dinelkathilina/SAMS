@@ -123,6 +123,7 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapUserProfileEndpoints();
 app.UseDeveloperExceptionPage();
+app.MapLecturerEndpoints();
 app.UseCors("AllowReactApp");
 app.Run();
 
