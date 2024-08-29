@@ -1,31 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SAMS.Models;
 
 namespace SAMS.Data;
 
-public partial class AMSContext : DbContext
+public  class AMSContext : IdentityDbContext<ApplicationUser>
 {
     public AMSContext(DbContextOptions<AMSContext> options)
         : base(options)
     {
     }
 
-    public virtual DbSet<Course> Courses { get; set; }
+    public  DbSet<Course> Courses { get; set; }
 
-    public virtual DbSet<Lecturer> Lecturers { get; set; }
+    public  DbSet<Lecturer> Lecturers { get; set; }
 
-    public virtual DbSet<Student> Students { get; set; }
+    public DbSet<Student> Students { get; set; }
 
-    public virtual DbSet<User> Users { get; set; }
-    public virtual DbSet<CourseTime> CourseTimes { get; set; }
-    public virtual DbSet<LectureHall> LectureHalls { get; set; }
-    public virtual DbSet<Session> Sessions { get; set; }
-    public virtual DbSet<Attendance> Attendances { get; set; }
+    //public virtual DbSet<User> Users { get; set; }
+    public DbSet<CourseTime> CourseTimes { get; set; }
+    public DbSet<LectureHall> LectureHalls { get; set; }
+    public DbSet<Session> Sessions { get; set; }
+    public DbSet<Attendance> Attendances { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        base.OnModelCreating(modelBuilder); 
+
         modelBuilder.Entity<Course>(entity =>
         {
             entity.ToTable("Course");
@@ -49,7 +53,7 @@ public partial class AMSContext : DbContext
             entity.Property(e => e.LecturerID).ValueGeneratedOnAdd();
 
             entity.HasOne(d => d.User).WithOne(p => p.Lecturer)
-                .HasForeignKey<Lecturer>(d => d.LecturerID)
+                .HasForeignKey<Lecturer>(d => d.UserID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lecturer_User");
         });
@@ -63,12 +67,12 @@ public partial class AMSContext : DbContext
             entity.Property(e => e.StudentID).ValueGeneratedOnAdd();
 
             entity.HasOne(d => d.User).WithOne(p => p.Student)
-                .HasForeignKey<Student>(d => d.StudentID)
+                .HasForeignKey<Student>(d => d.UserID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Student_User");
         });
 
-        modelBuilder.Entity<User>(entity =>
+       /* modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("User");
 
@@ -80,7 +84,7 @@ public partial class AMSContext : DbContext
             entity.Property(e => e.UserType)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-        });
+        });*/
         
         modelBuilder.Entity<CourseTime>(entity =>
         {
@@ -147,8 +151,8 @@ public partial class AMSContext : DbContext
 
 
 
-        OnModelCreatingPartial(modelBuilder);
+      
     }
 
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
 }

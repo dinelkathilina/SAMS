@@ -6,8 +6,9 @@ namespace SAMS.Models;
 public partial class Student
 {
     public int StudentID { get; set; }
+    public string UserID { get; set; } = null!;
 
     public int? CurrentSemester { get; set; }
 
-    public virtual User User { get; set; } = null!;
+    public virtual ApplicationUser User { get; set; } = null!;
 }
