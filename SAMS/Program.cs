@@ -134,7 +134,7 @@ app.MapAuthEndpoints();
 app.MapUserProfileEndpoints();
 app.UseDeveloperExceptionPage();
 app.MapLecturerEndpoints();
-
+app.MapSessionEndpoints();
 app.UseCors("AllowReactApp");
 
 //var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
