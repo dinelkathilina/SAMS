@@ -24,8 +24,11 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 //builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddLogging();
 
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
+                       builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<AMSContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString)); // Adjust to UseNpgsql or UseMySql if Railway uses a different DB
 
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
