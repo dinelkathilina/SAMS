@@ -24,12 +24,12 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 //builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddLogging();
 
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
-                       builder.Configuration.GetConnectionString("DefaultConnection");
+// Get the MySQL connection string from environment variables
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
 
+// Update to use MySQL with Pomelo.EntityFrameworkCore.MySql
 builder.Services.AddDbContext<AMSContext>(options =>
-    options.UseSqlServer(connectionString)); // Adjust to UseNpgsql or UseMySql if Railway uses a different DB
-
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
        .AddEntityFrameworkStores<AMSContext>()
