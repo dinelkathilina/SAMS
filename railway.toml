@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "./SAMS/Dockerfile"
 
 [deploy]
 startCommand = "dotnet SAMS.dll"
