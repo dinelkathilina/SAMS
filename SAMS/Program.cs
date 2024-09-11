@@ -21,11 +21,12 @@ builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection(
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 // Add services to the container.
-builder.Configuration.AddUserSecrets<Program>();
+//builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddLogging();
 
 builder.Services.AddDbContext<AMSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
        .AddEntityFrameworkStores<AMSContext>()
@@ -67,7 +68,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["JWT:ValidAudience"],
         ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"])),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ??
+             throw new InvalidOperationException("JWT:Secret is not configured"))),
         NameClaimType = ClaimTypes.NameIdentifier
     };
 });
@@ -111,7 +113,15 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+       
 }
+/* (options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = string.Empty; // This makes Swagger UI the root page
+    });*/
+
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 // Configure rate limiting middleware
 app.UseIpRateLimiting();
@@ -124,7 +134,11 @@ app.MapAuthEndpoints();
 app.MapUserProfileEndpoints();
 app.UseDeveloperExceptionPage();
 app.MapLecturerEndpoints();
+app.MapSessionEndpoints();
 app.UseCors("AllowReactApp");
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+app.Run($"http://0.0.0.0:{port}");
 app.Run();
 
 
