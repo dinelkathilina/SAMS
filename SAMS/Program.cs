@@ -29,7 +29,15 @@ var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 // Update to use MySQL with Pomelo.EntityFrameworkCore.MySql
 builder.Services.AddDbContext<AMSContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
+        mySqlOptions =>
+        {
+            mySqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+        }
+    ));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
        .AddEntityFrameworkStores<AMSContext>()
