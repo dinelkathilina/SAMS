@@ -90,6 +90,14 @@ namespace SAMS.Endpoints
             {
                 try
                 {
+                    logger.LogInformation($"Login attempt received for email: {model.Email}, RememberMe: {model.RememberMe}");
+
+                    if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+                    {
+                        logger.LogWarning("Login failed: Email or password is empty");
+                        return Results.BadRequest(new { message = "Email and password are required" });
+                    }
+
                     var user = await userManager.FindByEmailAsync(model.Email);
                     if (user == null)
                     {
@@ -97,17 +105,24 @@ namespace SAMS.Endpoints
                         return Results.BadRequest(new { message = "Invalid email or password" });
                     }
 
+                    logger.LogInformation($"User found for email: {model.Email}");
+
                     var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true);
                     if (result.Succeeded)
                     {
                         logger.LogInformation($"Login successful for user: {user.Email}");
-                        var token = GenerateJwtToken(user, configuration , model.RememberMe);
+                        var token = GenerateJwtToken(user, configuration, model.RememberMe);
                         return Results.Ok(new { Token = token, Message = "Login successful", UserType = user.UserType });
                     }
                     else if (result.IsLockedOut)
                     {
                         logger.LogWarning($"Account locked out for user {model.Email}");
                         return Results.BadRequest(new { message = "Account is locked out. Please try again later or contact support." });
+                    }
+                    else if (result.RequiresTwoFactor)
+                    {
+                        logger.LogInformation($"Two-factor authentication required for user {model.Email}");
+                        return Results.BadRequest(new { message = "Two-factor authentication is required" });
                     }
                     else
                     {
@@ -117,8 +132,8 @@ namespace SAMS.Endpoints
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "An error occurred during user login");
-                    return Results.Problem("An error occurred during login. Please try again later.", statusCode: 500);
+                    logger.LogError(ex, $"An unexpected error occurred during login for email: {model.Email}");
+                    return Results.Problem("An unexpected error occurred during login. Please try again later.", statusCode: 500);
                 }
             }).RequireCors("AllowReactApp");
         }

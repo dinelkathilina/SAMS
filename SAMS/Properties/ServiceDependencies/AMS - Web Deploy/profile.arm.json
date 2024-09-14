@@ -7,21 +7,21 @@
   "parameters": {
     "resourceGroupName": {
       "type": "string",
-      "defaultValue": "learn-f02c872a-22f0-4561-84c9-0e249e4198d7",
+      "defaultValue": "Thilina",
       "metadata": {
         "description": "Name of the resource group for the resource. It is recommended to put resources under same resource group for better tracking."
       }
     },
     "resourceGroupLocation": {
       "type": "string",
-      "defaultValue": "westus",
+      "defaultValue": "southeastasia",
       "metadata": {
         "description": "Location of the resource group. Resource groups could have different location than resources, however by default we use API versions from latest hybrid profile which support all locations for resource types we support."
       }
     },
     "resourceName": {
       "type": "string",
-      "defaultValue": "dinelka",
+      "defaultValue": "AMS",
       "metadata": {
         "description": "Name of the main resource to be created by this template."
       }
