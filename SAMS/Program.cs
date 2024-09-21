@@ -9,6 +9,7 @@ using System.Text;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Cors;
 using System.Security.Claims;
+using SAMS.Hubs;
 
 
 
@@ -75,7 +76,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
+// Add SignalR to Program.cs
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -151,7 +153,10 @@ app.MapSessionEndpoints();
 
 //var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 //app.Run($"http://0.0.0.0:{port}");
+
+app.MapHub<AttendanceHub>("/attendanceHub");
 app.Run();
+
 
 
 

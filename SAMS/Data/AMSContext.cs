@@ -134,24 +134,28 @@ public  class AMSContext : IdentityDbContext<ApplicationUser>
         {
             entity.ToTable("Attendance");
 
-            entity.HasOne(d => d.Session).WithMany(p => p.Attendances)
+            entity.HasOne(d => d.Session)
+                .WithMany(p => p.Attendances)
                 .HasForeignKey(d => d.SessionID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Course_Session");
-            
-            entity.HasOne(d => d.User).WithMany(p => p.Attendances)
+                .HasConstraintName("FK_Attendance_Session");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.Attendances)
                 .HasForeignKey(d => d.UserID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_User_userID");
+                .HasConstraintName("FK_Attendance_User");
 
-
-
+            // Explicitly configure required properties
+            entity.Property(e => e.UserID).IsRequired();
+            entity.Property(e => e.SessionID).IsRequired();
+            entity.Property(e => e.CheckInTime).IsRequired();
         });
 
 
 
 
-      
+
     }
 
 

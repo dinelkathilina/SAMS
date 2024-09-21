@@ -41,45 +41,52 @@ namespace SAMS.Endpoints
                         Name = model.Name,
                         UserType = userType
                     };
+
                     using var transaction = await context.Database.BeginTransactionAsync();
 
-                    try { 
+                    try
+                    {
+                        var result = await userManager.CreateAsync(user, model.Password);
+                        if (!result.Succeeded)
+                            return Results.BadRequest(result.Errors);
 
-                    var result = await userManager.CreateAsync(user, model.Password);
-                    if (!result.Succeeded)
-                        return Results.BadRequest(result.Errors);
+                        await userManager.AddToRoleAsync(user, userType);
 
-                    await userManager.AddToRoleAsync(user, userType);
-
-                        if (userType == "Student"){
-                            var student = new Student
+                        if (userType == "Student")
                         {
-                            UserID = user.Id,
-                            CurrentSemester = 1 // Or any default value
+                            var student = new Student
+                            {
+                                UserID = user.Id,
+                                CurrentSemester = 1
                             };
-                         context.Students.Add(student);
+                            context.Students.Add(student);
+                            logger.LogInformation($"Attempting to add student record for UserID: {user.Id}");
                         }
                         else if (userType == "Lecturer")
-                                               {
-                         var lecturer = new Lecturer
-                                                   {
-                         UserID = user.Id
-                                                       };
-                         context.Lecturers.Add(lecturer);
-                                               }
+                        {
+                            var lecturer = new Lecturer
+                            {
+                                UserID = user.Id
+                            };
+                            context.Lecturers.Add(lecturer);
+                            logger.LogInformation($"Attempting to add lecturer record for UserID: {user.Id}");
+                        }
 
                         await context.SaveChangesAsync();
                         await transaction.CommitAsync();
+                        logger.LogInformation($"Transaction committed for {userType} registration");
 
                         logger.LogInformation($"User {user.Email} registered successfully as {userType}");
-                    return Results.Ok($"User created successfully as {userType}!");
-                }
-                    catch (Exception){
-                        await transaction.RollbackAsync();
-                        throw;
-                     }
+                        return Results.Ok($"User created successfully as {userType}!");
                     }
                     catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        logger.LogError(ex, $"Error during {userType} registration for UserID: {user.Id}");
+                        throw;
+                    }
+                }
+                catch (Exception ex)
                 {
                     logger.LogError(ex, "An error occurred during user registration");
                     return Results.Problem("An error occurred during registration. Please try again later.", statusCode: 500);
