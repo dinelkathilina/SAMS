@@ -41,45 +41,52 @@ namespace SAMS.Endpoints
                         Name = model.Name,
                         UserType = userType
                     };
+
                     using var transaction = await context.Database.BeginTransactionAsync();
 
-                    try { 
+                    try
+                    {
+                        var result = await userManager.CreateAsync(user, model.Password);
+                        if (!result.Succeeded)
+                            return Results.BadRequest(result.Errors);
 
-                    var result = await userManager.CreateAsync(user, model.Password);
-                    if (!result.Succeeded)
-                        return Results.BadRequest(result.Errors);
+                        await userManager.AddToRoleAsync(user, userType);
 
-                    await userManager.AddToRoleAsync(user, userType);
-
-                        if (userType == "Student"){
-                            var student = new Student
+                        if (userType == "Student")
                         {
-                            UserID = user.Id,
-                            CurrentSemester = 1 // Or any default value
+                            var student = new Student
+                            {
+                                UserID = user.Id,
+                                CurrentSemester = 1
                             };
-                         context.Students.Add(student);
+                            context.Students.Add(student);
+                            logger.LogInformation($"Attempting to add student record for UserID: {user.Id}");
                         }
                         else if (userType == "Lecturer")
-                                               {
-                         var lecturer = new Lecturer
-                                                   {
-                         UserID = user.Id
-                                                       };
-                         context.Lecturers.Add(lecturer);
-                                               }
+                        {
+                            var lecturer = new Lecturer
+                            {
+                                UserID = user.Id
+                            };
+                            context.Lecturers.Add(lecturer);
+                            logger.LogInformation($"Attempting to add lecturer record for UserID: {user.Id}");
+                        }
 
                         await context.SaveChangesAsync();
                         await transaction.CommitAsync();
+                        logger.LogInformation($"Transaction committed for {userType} registration");
 
                         logger.LogInformation($"User {user.Email} registered successfully as {userType}");
-                    return Results.Ok($"User created successfully as {userType}!");
-                }
-                    catch (Exception){
-                        await transaction.RollbackAsync();
-                        throw;
-                     }
+                        return Results.Ok($"User created successfully as {userType}!");
                     }
                     catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        logger.LogError(ex, $"Error during {userType} registration for UserID: {user.Id}");
+                        throw;
+                    }
+                }
+                catch (Exception ex)
                 {
                     logger.LogError(ex, "An error occurred during user registration");
                     return Results.Problem("An error occurred during registration. Please try again later.", statusCode: 500);
@@ -90,6 +97,14 @@ namespace SAMS.Endpoints
             {
                 try
                 {
+                    logger.LogInformation($"Login attempt received for email: {model.Email}, RememberMe: {model.RememberMe}");
+
+                    if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+                    {
+                        logger.LogWarning("Login failed: Email or password is empty");
+                        return Results.BadRequest(new { message = "Email and password are required" });
+                    }
+
                     var user = await userManager.FindByEmailAsync(model.Email);
                     if (user == null)
                     {
@@ -97,17 +112,24 @@ namespace SAMS.Endpoints
                         return Results.BadRequest(new { message = "Invalid email or password" });
                     }
 
+                    logger.LogInformation($"User found for email: {model.Email}");
+
                     var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true);
                     if (result.Succeeded)
                     {
                         logger.LogInformation($"Login successful for user: {user.Email}");
-                        var token = GenerateJwtToken(user, configuration , model.RememberMe);
+                        var token = GenerateJwtToken(user, configuration, model.RememberMe);
                         return Results.Ok(new { Token = token, Message = "Login successful", UserType = user.UserType });
                     }
                     else if (result.IsLockedOut)
                     {
                         logger.LogWarning($"Account locked out for user {model.Email}");
                         return Results.BadRequest(new { message = "Account is locked out. Please try again later or contact support." });
+                    }
+                    else if (result.RequiresTwoFactor)
+                    {
+                        logger.LogInformation($"Two-factor authentication required for user {model.Email}");
+                        return Results.BadRequest(new { message = "Two-factor authentication is required" });
                     }
                     else
                     {
@@ -117,8 +139,8 @@ namespace SAMS.Endpoints
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "An error occurred during user login");
-                    return Results.Problem("An error occurred during login. Please try again later.", statusCode: 500);
+                    logger.LogError(ex, $"An unexpected error occurred during login for email: {model.Email}");
+                    return Results.Problem("An unexpected error occurred during login. Please try again later.", statusCode: 500);
                 }
             }).RequireCors("AllowReactApp");
         }

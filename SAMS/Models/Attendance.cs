@@ -6,8 +6,7 @@
         public int SessionID { get; set; }
         public string UserID { get; set; } = null!;
         public DateTime CheckInTime { get; set; }
-        public required virtual ApplicationUser User { get; set; }
-        public required virtual Session Session { get; set; }
-        
+        public virtual ApplicationUser User { get; set; } = null!;
+        public virtual Session Session { get; set; } = null!;
     }
 }

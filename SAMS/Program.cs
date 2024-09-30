@@ -9,6 +9,7 @@ using System.Text;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Cors;
 using System.Security.Claims;
+using SAMS.Hubs;
 
 
 
@@ -54,7 +55,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredUniqueChars = 1;
 
     // Lockout settings
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(20);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
 
@@ -86,21 +87,31 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
+// Add SignalR to Program.cs
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+
 // Add this to your service configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", builder =>
     {
-        builder.WithOrigins("http://localhost:3000") // Replace with your React app's URL
+        builder.WithOrigins("https://students-attendance-management-system.vercel.app", 
+            "https://students-attendance-management-system-dinelkathilinas-projects.vercel.app") // Replace with your React app's URL
                .AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials();
+        /*builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();*/
     });
 });
+
+
 
 var app = builder.Build();
 
@@ -120,11 +131,14 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsProduction())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
-       
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = string.Empty;
+    });
 }
 /* (options =>
     {
@@ -138,6 +152,7 @@ app.MapGet("/", () => Results.Redirect("/swagger"));
 app.UseIpRateLimiting();
 
 app.UseHttpsRedirection();
+app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -146,11 +161,14 @@ app.MapUserProfileEndpoints();
 app.UseDeveloperExceptionPage();
 app.MapLecturerEndpoints();
 app.MapSessionEndpoints();
-app.UseCors("AllowReactApp");
 
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+//app.Run($"http://0.0.0.0:{port}");
+
+app.MapHub<AttendanceHub>("/attendanceHub");
+=======
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 app.Run($"http://0.0.0.0:{port}");
-app.Run();
 
 
 

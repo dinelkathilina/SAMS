@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SAMS.Data;
+using SAMS.Hubs;
 using SAMS.Models;
 using System.Security.Claims;
 
@@ -76,13 +78,102 @@ public static class SessionEndpoints
             return Results.Ok(new { SessionID = newSession.SessionID, SessionCode = newSession.SessionCode });
         });
 
+        app.MapPost("/api/attendance/check-in", [Authorize(Roles = "Student")] async (HttpContext context, AMSContext dbContext,IHubContext<AttendanceHub> hubContext , ILogger<Program> logger, CheckInModel model) =>
+        {
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            logger.LogInformation($"Attempting check-in for user ID: {userId}");
 
+            var student = await dbContext.Students
+                .FirstOrDefaultAsync(s => s.UserID == userId);
+
+            if (student == null)
+            {
+                logger.LogWarning($"Student not found for user ID: {userId}");
+                return Results.BadRequest("Student not found for the current user.");
+            }
+
+            var session = await dbContext.Sessions
+                .Include(s=>s.Course)
+                .FirstOrDefaultAsync(s => s.SessionCode == model.SessionCode && s.ExpirationTime > DateTime.UtcNow);
+
+            if (session == null)
+            {
+                return Results.BadRequest("Invalid or expired session code.");
+            }
+
+            // Check if the student has already checked in for this session
+            var existingAttendance = await dbContext.Attendances
+                .FirstOrDefaultAsync(a => a.SessionID == session.SessionID && a.UserID == userId);
+
+            if (existingAttendance != null)
+            {
+                return Results.BadRequest("You have already checked in for this session.");
+            }
+
+            var user = await dbContext.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return Results.BadRequest("User not found.");
+            }
+
+            var newAttendance = new Attendance
+            {
+                SessionID = session.SessionID,
+                UserID = userId,
+                CheckInTime = DateTime.UtcNow,
+                User = user,
+                Session = session
+            };
+
+            dbContext.Attendances.Add(newAttendance);
+            await dbContext.SaveChangesAsync();
+
+            var attendanceInfo = new
+            {
+                StudentName = user.Name,
+                CheckInTime = newAttendance.CheckInTime,
+                CourseName  = session.Course.CourseName,
+                StartTime   = session.CreationTime,
+                EndTime     = session.ExpirationTime
+            };
+            await hubContext.Clients.Group(model.SessionCode).SendAsync("NewCheckIn", attendanceInfo);
+
+            return Results.Ok(new 
+            { 
+                message = "Successfully checked in to the session.",
+                sessionDetails = attendanceInfo
+            });
+        });
 
         // You can add more session-related endpoints here in the future
         // For example:
         // app.MapPost("/api/session/create", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, SessionCreationModel model) => { ... });
         // app.MapGet("/api/session/{id}", [Authorize] async (int id, AMSContext dbContext) => { ... });
         // etc.
+        // In SessionEndpoints.cs
+        app.MapGet("/api/session/checked-in-students/{sessionCode}", [Authorize] async (string sessionCode, AMSContext dbContext) =>
+        {
+            var session = await dbContext.Sessions
+                .Include(s => s.Attendances)
+                .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(s => s.SessionCode == sessionCode);
+
+            if (session == null)
+            {
+                return Results.NotFound("Session not found");
+            }
+
+            var checkedInStudents = session.Attendances
+                .Select(a => new
+                {
+                    StudentName = a.User.Name,
+                    CheckInTime = a.CheckInTime
+                })
+                .ToList();
+
+            return Results.Ok(checkedInStudents);
+        });
+
     }
     
 }
@@ -94,4 +185,8 @@ public class SessionCreationModel
     public string SessionCode { get; set; }
     public DateTime CreationTime { get; set; }
     public DateTime ExpirationTime { get; set; }
+}
+public class CheckInModel
+{
+    public string SessionCode { get; set; }
 }
