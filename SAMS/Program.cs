@@ -25,20 +25,9 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 //builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddLogging();
 
-// Get the MySQL connection string from environment variables
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
-
-// Update to use MySQL with Pomelo.EntityFrameworkCore.MySql
 builder.Services.AddDbContext<AMSContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
-        mySqlOptions =>
-        {
-            mySqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null);
-        }
-    ));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
        .AddEntityFrameworkStores<AMSContext>()
@@ -100,7 +89,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", builder =>
     {
-        builder.WithOrigins("https://students-attendance-management-system.vercel.app", 
+        builder.WithOrigins("https://students-attendance-management-system.vercel.app",
             "https://students-attendance-management-system-dinelkathilinas-projects.vercel.app") // Replace with your React app's URL
                .AllowAnyMethod()
                .AllowAnyHeader()
@@ -166,9 +155,8 @@ app.MapSessionEndpoints();
 //app.Run($"http://0.0.0.0:{port}");
 
 app.MapHub<AttendanceHub>("/attendanceHub");
+app.Run();
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.Run($"http://0.0.0.0:{port}");
 
 
 
