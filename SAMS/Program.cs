@@ -137,6 +137,8 @@ if (app.Environment.IsProduction())
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
+
+
 // Configure rate limiting middleware
 app.UseIpRateLimiting();
 
@@ -145,6 +147,7 @@ app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapLecturerCourseManagementEndpoints();
 app.MapAuthEndpoints();
 app.MapUserProfileEndpoints();
 app.UseDeveloperExceptionPage();
