@@ -10,7 +10,9 @@ using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Cors;
 using System.Security.Claims;
 using SAMS.Hubs;
-
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +54,14 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.AllowedUserNameCharacters =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
     options.User.RequireUniqueEmail = true;
+});
+
+
+// Configure JSON options for Minimal API
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
 builder.Services.AddAuthentication(options =>
@@ -137,6 +147,8 @@ if (app.Environment.IsProduction())
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
+
+
 // Configure rate limiting middleware
 app.UseIpRateLimiting();
 
@@ -145,11 +157,13 @@ app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapLecturerCourseManagementEndpoints();
 app.MapAuthEndpoints();
 app.MapUserProfileEndpoints();
 app.UseDeveloperExceptionPage();
 app.MapLecturerEndpoints();
 app.MapSessionEndpoints();
+app.MapAttendanceReportEndpoints();
 
 //var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 //app.Run($"http://0.0.0.0:{port}");
