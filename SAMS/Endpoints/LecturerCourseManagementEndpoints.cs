@@ -48,6 +48,12 @@ public static class LecturerCourseManagementEndpoints
             if (lecturer == null)
                 return Results.NotFound("Lecturer not found");
 
+            // Check for scheduling conflicts
+            if (await HasSchedulingConflict(context, lecturer.LecturerID, courseDto.CourseTimes))
+            {
+                return Results.BadRequest("Scheduling conflict detected. Please choose different time slots.");
+            }
+
             var newCourse = new Course
             {
                 CourseName = courseDto.CourseName,
@@ -72,7 +78,20 @@ public static class LecturerCourseManagementEndpoints
 
             await context.SaveChangesAsync();
 
-            return Results.Created($"/api/manage-courses/courses/{newCourse.CourseID}", newCourse);
+            var createdCourse = new
+            {
+                newCourse.CourseID,
+                newCourse.CourseName,
+                newCourse.Semester,
+                CourseTimes = newCourse.CourseTimes.Select(ct => new
+                {
+                    ct.Day,
+                    StartTime = ct.StartTime.ToString(@"HH:mm"),
+                    EndTime = ct.EndTime.ToString(@"HH:mm")
+                }).ToList()
+            };
+
+            return Results.Created($"/api/manage-courses/courses/{newCourse.CourseID}", createdCourse);
         });
 
         app.MapPut("/api/manage-courses/courses/{id}", [Authorize(Roles = "Lecturer")] async (HttpContext httpContext, AMSContext context, int id, CourseUpdateDto courseDto) =>
@@ -87,6 +106,12 @@ public static class LecturerCourseManagementEndpoints
 
             if (course == null)
                 return Results.NotFound("Course not found or you don't have permission to edit it");
+
+            // Check for scheduling conflicts (excluding the current course)
+            if (await HasSchedulingConflict(context, course.LecturerID, courseDto.CourseTimes, id))
+            {
+                return Results.BadRequest("Scheduling conflict detected. Please choose different time slots.");
+            }
 
             course.CourseName = courseDto.CourseName;
             course.Semester = courseDto.Semester;
@@ -136,6 +161,40 @@ public static class LecturerCourseManagementEndpoints
             return Results.NoContent();
         });
     }
+
+
+
+    private static async Task<bool> HasSchedulingConflict(AMSContext context, int lecturerId, List<CourseTimeDto> newCourseTimes, int? excludeCourseId = null)
+    {
+        var existingCourses = await context.Courses
+            .Where(c => c.LecturerID == lecturerId && (excludeCourseId == null || c.CourseID != excludeCourseId))
+            .Include(c => c.CourseTimes)
+            .ToListAsync();
+
+        foreach (var newTime in newCourseTimes)
+        {
+            var newStart = TimeOnly.Parse(newTime.StartTime);
+            var newEnd = TimeOnly.Parse(newTime.EndTime);
+
+            foreach (var course in existingCourses)
+            {
+                foreach (var existingTime in course.CourseTimes)
+                {
+                    if (existingTime.Day == newTime.Day &&
+                        ((newStart >= existingTime.StartTime && newStart < existingTime.EndTime) ||
+                         (newEnd > existingTime.StartTime && newEnd <= existingTime.EndTime) ||
+                         (newStart <= existingTime.StartTime && newEnd >= existingTime.EndTime)))
+                    {
+                        return true; // Conflict found
+                    }
+                }
+            }
+        }
+
+        return false; // No conflict
+    }
+
+
 }
 
 public class CourseCreationDto
