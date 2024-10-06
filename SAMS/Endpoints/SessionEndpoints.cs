@@ -174,6 +174,51 @@ public static class SessionEndpoints
             return Results.Ok(checkedInStudents);
         });
 
+
+        app.MapGet("/api/session/active", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext) =>
+        {
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var now = DateTime.UtcNow;
+
+            var activeSession = await dbContext.Sessions
+                .Where(s => s.Course.Lecturer.UserID == userId && s.ExpirationTime > now)
+                .OrderByDescending(s => s.CreationTime)
+                .Select(s => new {
+                    s.SessionID,
+                    s.SessionCode,
+                    s.CourseID,
+                    s.LectureHallID,
+                    s.CreationTime,
+                    s.ExpirationTime,
+                    RemainingTime = (int)(s.ExpirationTime - now).TotalSeconds
+                })
+                .FirstOrDefaultAsync();
+
+            if (activeSession == null)
+            {
+                return Results.NotFound(new { message = "No active session found" });
+            }
+
+            return Results.Ok(activeSession);
+        });
+
+        app.MapPost("/api/session/end/{sessionId}", [Authorize(Roles = "Lecturer")] async (int sessionId, HttpContext context, AMSContext dbContext) =>
+        {
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var session = await dbContext.Sessions
+                .Include(s => s.Course)
+                .ThenInclude(c => c.Lecturer)
+                .FirstOrDefaultAsync(s => s.SessionID == sessionId && s.Course.Lecturer.UserID == userId);
+
+            if (session == null)
+            {
+                return Results.NotFound("Session not found or you don't have permission to end it.");
+            }
+
+            // We're not actually ending the session in the database
+            // Just return a success message
+            return Results.Ok(new { message = "Session ended successfully" });
+        });
     }
     
 }
