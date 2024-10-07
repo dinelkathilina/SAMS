@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SAMS.Data;
 using SAMS.Hubs;
 using SAMS.Models;
+using SAMS.Utilities; 
 using System.Security.Claims;
 
 public static class SessionEndpoints
@@ -63,13 +64,24 @@ public static class SessionEndpoints
                 return Results.BadRequest("There is an overlapping session in the selected lecture hall.");
             }
 
+            // Ensure CreationTime is in UTC
+            var utcCreationTime = model.CreationTime.Kind == DateTimeKind.Utc
+                ? model.CreationTime
+                : model.CreationTime.ToUniversalTime();
+
+            var sessionCode = SessionCodeGenerator.GenerateSessionCode(
+                model.CourseID,
+                model.LectureHallID,
+                utcCreationTime
+            );
+
             var newSession = new Session
             {
                 CourseID = model.CourseID,
                 LectureHallID = model.LectureHallID,
-                SessionCode = model.SessionCode,
-                CreationTime = model.CreationTime,
-                ExpirationTime = model.ExpirationTime
+                SessionCode = sessionCode,
+                CreationTime = utcCreationTime,
+                ExpirationTime = model.ExpirationTime.ToUniversalTime()
             };
 
             dbContext.Sessions.Add(newSession);
@@ -215,9 +227,18 @@ public static class SessionEndpoints
                 return Results.NotFound("Session not found or you don't have permission to end it.");
             }
 
-            // We're not actually ending the session in the database
-            // Just return a success message
-            return Results.Ok(new { message = "Session ended successfully" });
+            // Remove all related attendances
+            var attendances = await dbContext.Attendances
+                .Where(a => a.SessionID == sessionId)
+                .ToListAsync();
+            dbContext.Attendances.RemoveRange(attendances);
+
+            // Remove the session
+            dbContext.Sessions.Remove(session);
+
+            await dbContext.SaveChangesAsync();
+
+            return Results.Ok(new { message = "Session ended and all related data removed successfully" });
         });
     }
     
