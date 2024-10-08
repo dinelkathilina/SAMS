@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace SAMS.Utilities // Replace SAMS with your project's namespace
+namespace SAMS.Utilities
 {
     public static class SessionCodeGenerator
     {

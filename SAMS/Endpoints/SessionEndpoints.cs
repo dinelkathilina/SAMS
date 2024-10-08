@@ -30,14 +30,16 @@ public static class SessionEndpoints
             return Results.Ok(lectureHalls);
         });
 
-        app.MapPost("/api/session/create", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, SessionCreationModel model) =>
+        app.MapPost("/api/session/create", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, SessionCreationModel model, ILogger<Program> logger) =>
         {
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            logger.LogInformation($"Attempting to create session for user: {userId}");
+
             var lecturer = await dbContext.Lecturers
                 .FirstOrDefaultAsync(l => l.UserID == userId);
-
             if (lecturer == null)
             {
+                logger.LogWarning($"Lecturer not found for user ID: {userId}");
                 return Results.BadRequest("Lecturer not found for the current user.");
             }
 
@@ -45,30 +47,33 @@ public static class SessionEndpoints
                 .FirstOrDefaultAsync(c => c.CourseID == model.CourseID && c.LecturerID == lecturer.LecturerID);
             if (course == null)
             {
+                logger.LogWarning($"Invalid course selection. CourseID: {model.CourseID}, LecturerID: {lecturer.LecturerID}");
                 return Results.BadRequest($"Invalid course selection. CourseID: {model.CourseID}, LecturerID: {lecturer.LecturerID}");
             }
 
             var lectureHall = await dbContext.LectureHalls.FindAsync(model.LectureHallID);
             if (lectureHall == null)
             {
+                logger.LogWarning($"Invalid lecture hall selection. LectureHallID: {model.LectureHallID}");
                 return Results.BadRequest("Invalid lecture hall selection.");
             }
 
             // Check for overlapping sessions
             var overlappingSessions = await dbContext.Sessions
                 .AnyAsync(s => s.LectureHallID == model.LectureHallID &&
-                               s.CreationTime < model.ExpirationTime &&
-                               model.CreationTime < s.ExpirationTime);
+                               s.CreationTime < model.LectureEndTime &&
+                               model.CreationTime < s.LectureEndTime);
 
             if (overlappingSessions)
             {
+                logger.LogWarning($"Overlapping session detected for LectureHallID: {model.LectureHallID}, CreationTime: {model.CreationTime}, LectureEndTime: {model.LectureEndTime}");
                 return Results.BadRequest("There is an overlapping session in the selected lecture hall.");
             }
 
-            // Ensure CreationTime is in UTC
-            var utcCreationTime = model.CreationTime.Kind == DateTimeKind.Utc
-                ? model.CreationTime
-                : model.CreationTime.ToUniversalTime();
+            // Ensure times are in UTC
+            var utcCreationTime = model.CreationTime.ToUniversalTime();
+            var utcExpirationTime = model.ExpirationTime.ToUniversalTime();
+            var utcLectureEndTime = model.LectureEndTime.ToUniversalTime();
 
             var sessionCode = SessionCodeGenerator.GenerateSessionCode(
                 model.CourseID,
@@ -82,12 +87,14 @@ public static class SessionEndpoints
                 LectureHallID = model.LectureHallID,
                 SessionCode = sessionCode,
                 CreationTime = utcCreationTime,
-                ExpirationTime = model.ExpirationTime.ToUniversalTime()
+                ExpirationTime = utcExpirationTime,
+                LectureEndTime = utcLectureEndTime
             };
 
             dbContext.Sessions.Add(newSession);
             await dbContext.SaveChangesAsync();
 
+            logger.LogInformation($"Session created successfully. SessionID: {newSession.SessionID}, SessionCode: {newSession.SessionCode}");
             return Results.Ok(new { SessionID = newSession.SessionID, SessionCode = newSession.SessionCode });
         });
 
@@ -245,6 +252,7 @@ public static class SessionEndpoints
             return Results.Ok(new { message = "Session ended and all related data removed successfully" });
         });
 
+
         app.MapGet("/api/session/course-times/{courseId}", [Authorize(Roles = "Lecturer")] async (int courseId, AMSContext dbContext, ILogger<Program> logger) =>
         {
             logger.LogInformation($"Fetching course time for courseId: {courseId}");
@@ -271,9 +279,9 @@ public class SessionCreationModel
 {
     public int CourseID { get; set; }
     public int LectureHallID { get; set; }
-    public string SessionCode { get; set; }
     public DateTime CreationTime { get; set; }
     public DateTime ExpirationTime { get; set; }
+    public DateTime LectureEndTime { get; set; }
 }
 public class CheckInModel
 {
