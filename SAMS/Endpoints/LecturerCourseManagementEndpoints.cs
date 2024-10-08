@@ -145,10 +145,14 @@ public static class LecturerCourseManagementEndpoints
 
             var course = await context.Courses
                 .Include(c => c.CourseTimes)
+                .Include(c => c.Sessions)
                 .FirstOrDefaultAsync(c => c.CourseID == id && c.Lecturer.UserID == userId);
 
             if (course == null)
                 return Results.NotFound("Course not found or you don't have permission to delete it");
+
+            // Remove related Sessions
+            context.Sessions.RemoveRange(course.Sessions);
 
             // Remove related CourseTimes
             context.CourseTimes.RemoveRange(course.CourseTimes);
@@ -156,9 +160,16 @@ public static class LecturerCourseManagementEndpoints
             // Remove the course
             context.Courses.Remove(course);
 
-            await context.SaveChangesAsync();
-
-            return Results.NoContent();
+            try
+            {
+                await context.SaveChangesAsync();
+                return Results.NoContent();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                return Results.Problem($"An error occurred while deleting the course: {ex.Message}", statusCode: 500);
+            }
         });
     }
 

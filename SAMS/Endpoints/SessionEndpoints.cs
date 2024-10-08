@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SAMS.Data;
 using SAMS.Hubs;
 using SAMS.Models;
@@ -187,9 +188,10 @@ public static class SessionEndpoints
         });
 
 
-        app.MapGet("/api/session/active", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext) =>
+        app.MapGet("/api/session/active", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, ILogger<Program> logger) =>
         {
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            logger.LogInformation($"Fetching active session for user: {userId}");
             var now = DateTime.UtcNow;
 
             var activeSession = await dbContext.Sessions
@@ -208,9 +210,11 @@ public static class SessionEndpoints
 
             if (activeSession == null)
             {
+                logger.LogInformation($"No active session found for user: {userId}");
                 return Results.NotFound(new { message = "No active session found" });
             }
 
+            logger.LogInformation($"Active session found: {activeSession.SessionID}");
             return Results.Ok(activeSession);
         });
 
@@ -239,6 +243,25 @@ public static class SessionEndpoints
             await dbContext.SaveChangesAsync();
 
             return Results.Ok(new { message = "Session ended and all related data removed successfully" });
+        });
+
+        app.MapGet("/api/session/course-times/{courseId}", [Authorize(Roles = "Lecturer")] async (int courseId, AMSContext dbContext, ILogger<Program> logger) =>
+        {
+            logger.LogInformation($"Fetching course time for courseId: {courseId}");
+            var currentDay = DateTime.UtcNow.DayOfWeek;
+            var courseTime = await dbContext.CourseTimes
+                .Where(ct => ct.CourseID == courseId && ct.Day == currentDay)
+                .Select(ct => new { ct.StartTime, ct.EndTime })
+                .FirstOrDefaultAsync();
+
+            if (courseTime == null)
+            {
+                logger.LogWarning($"No course time found for courseId: {courseId} on day: {currentDay}");
+                return Results.NotFound("No course time found for today");
+            }
+
+            logger.LogInformation($"Course time found for courseId: {courseId}");
+            return Results.Ok(courseTime);
         });
     }
     
