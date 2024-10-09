@@ -8,6 +8,7 @@
         public string SessionCode { get; set; }
         public DateTime CreationTime { get; set; }
         public DateTime ExpirationTime { get; set; }
+        public DateTime LectureStartTime { get; set; } 
         public DateTime LectureEndTime { get; set; }
         public virtual Course Course { get; set; }
         public virtual LectureHall LectureHall  { get; set; }
