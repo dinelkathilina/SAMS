@@ -163,12 +163,7 @@ public static class SessionEndpoints
             });
         });
 
-        // You can add more session-related endpoints here in the future
-        // For example:
-        // app.MapPost("/api/session/create", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, SessionCreationModel model) => { ... });
-        // app.MapGet("/api/session/{id}", [Authorize] async (int id, AMSContext dbContext) => { ... });
-        // etc.
-        // In SessionEndpoints.cs
+        
         app.MapGet("/api/session/checked-in-students/{sessionCode}", [Authorize] async (string sessionCode, AMSContext dbContext) =>
         {
             var session = await dbContext.Sessions
