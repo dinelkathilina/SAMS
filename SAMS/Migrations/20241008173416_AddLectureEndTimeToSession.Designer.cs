@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAMS.Data;
 
@@ -11,9 +12,11 @@ using SAMS.Data;
 namespace SAMS.Migrations
 {
     [DbContext(typeof(AMSContext))]
-    partial class AMSContextModelSnapshot : ModelSnapshot
+    [Migration("20241008173416_AddLectureEndTimeToSession")]
+    partial class AddLectureEndTimeToSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -382,9 +385,6 @@ namespace SAMS.Migrations
 
                     b.Property<int>("LectureHallID")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("LectureStartTime")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("SessionCode")
                         .IsRequired()

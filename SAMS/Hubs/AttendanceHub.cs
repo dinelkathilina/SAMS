@@ -1,15 +1,22 @@
-﻿namespace SAMS.Hubs;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 
-public class AttendanceHub : Hub
+namespace SAMS.Hubs
 {
-    public async Task JoinSession(string sessionCode)
+    public class AttendanceHub : Hub
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, sessionCode);
-    }
+        public async Task JoinSession(string sessionCode)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, sessionCode);
+        }
 
-    public async Task LeaveSession(string sessionCode)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, sessionCode);
+        public async Task LeaveSession(string sessionCode)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, sessionCode);
+        }
+
+        public async Task UpdateSessionStatus(string sessionCode, string status)
+        {
+            await Clients.Group(sessionCode).SendAsync("SessionStatusUpdated", status);
+        }
     }
 }

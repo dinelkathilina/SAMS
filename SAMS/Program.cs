@@ -169,6 +169,7 @@ app.MapAttendanceReportEndpoints();
 //app.Run($"http://0.0.0.0:{port}");
 
 app.MapHub<AttendanceHub>("/attendanceHub");
+
 app.Run();
 
 

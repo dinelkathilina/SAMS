@@ -1,13 +1,17 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SAMS.Data;
 using SAMS.Hubs;
 using SAMS.Models;
+using SAMS.Utilities; 
 using System.Security.Claims;
 
 public static class SessionEndpoints
 {
+    //Timezone
+    private static readonly TimeZoneInfo sriLankaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
     public static void MapSessionEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/session/courses", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext) =>
@@ -28,54 +32,68 @@ public static class SessionEndpoints
             return Results.Ok(lectureHalls);
         });
 
-        app.MapPost("/api/session/create", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, SessionCreationModel model) =>
+        app.MapPost("/api/session/create", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, SessionCreationModel model, ILogger<Program> logger) =>
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var lecturer = await dbContext.Lecturers
-                .FirstOrDefaultAsync(l => l.UserID == userId);
-
-            if (lecturer == null)
+            try
             {
-                return Results.BadRequest("Lecturer not found for the current user.");
+                var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                logger.LogInformation($"Attempting to create session for user: {userId}");
+
+                // Combine date and time strings, then convert to DateTimeOffset
+                var lectureStart = DateTimeOffset.ParseExact($"{model.Date} {model.LectureStartTime}", "yyyy-MM-dd HH:mm", null, System.Globalization.DateTimeStyles.AssumeLocal);
+                var lectureEnd = DateTimeOffset.ParseExact($"{model.Date} {model.LectureEndTime}", "yyyy-MM-dd HH:mm", null, System.Globalization.DateTimeStyles.AssumeLocal);
+
+                var creationTime = DateTimeOffset.Now;
+                var expirationTime = creationTime.AddMinutes(model.QRCodeExpirationMinutes);
+
+                // Convert all times to UTC
+                var utcCreationTime = creationTime.UtcDateTime;
+                var utcExpirationTime = expirationTime.UtcDateTime;
+                var utcLectureStartTime = lectureStart.UtcDateTime;
+                var utcLectureEndTime = lectureEnd.UtcDateTime;
+
+                // Check for overlapping sessions
+                var overlappingSessions = await dbContext.Sessions
+                    .Where(s => s.LectureHallID == model.LectureHallID &&
+                                s.LectureStartTime < utcLectureEndTime &&
+                                s.LectureEndTime > utcLectureStartTime)
+                    .ToListAsync();
+
+                if (overlappingSessions.Any())
+                {
+                    return Results.BadRequest("There is already a session scheduled in this lecture hall during the specified time.");
+                }
+
+                var newSession = new Session
+                {
+                    CourseID = model.CourseID,
+                    LectureHallID = model.LectureHallID,
+                    SessionCode = SessionCodeGenerator.GenerateSessionCode(model.CourseID, model.LectureHallID, utcCreationTime),
+                    CreationTime = utcCreationTime,
+                    ExpirationTime = utcExpirationTime,
+                    LectureStartTime = utcLectureStartTime,
+                    LectureEndTime = utcLectureEndTime
+                };
+
+                dbContext.Sessions.Add(newSession);
+                await dbContext.SaveChangesAsync();
+
+                logger.LogInformation($"Session created successfully. SessionID: {newSession.SessionID}, SessionCode: {newSession.SessionCode}");
+                return Results.Ok(new
+                {
+                    SessionID = newSession.SessionID,
+                    SessionCode = newSession.SessionCode,
+                    CreationTime = newSession.CreationTime,
+                    ExpirationTime = newSession.ExpirationTime,
+                    LectureStartTime = newSession.LectureStartTime,
+                    LectureEndTime = newSession.LectureEndTime
+                });
             }
-
-            var course = await dbContext.Courses
-                .FirstOrDefaultAsync(c => c.CourseID == model.CourseID && c.LecturerID == lecturer.LecturerID);
-            if (course == null)
+            catch (Exception ex)
             {
-                return Results.BadRequest($"Invalid course selection. CourseID: {model.CourseID}, LecturerID: {lecturer.LecturerID}");
+                logger.LogError(ex, "Error creating session");
+                return Results.Problem($"An error occurred while creating the session: {ex.Message}", statusCode: 500);
             }
-
-            var lectureHall = await dbContext.LectureHalls.FindAsync(model.LectureHallID);
-            if (lectureHall == null)
-            {
-                return Results.BadRequest("Invalid lecture hall selection.");
-            }
-
-            // Check for overlapping sessions
-            var overlappingSessions = await dbContext.Sessions
-                .AnyAsync(s => s.LectureHallID == model.LectureHallID &&
-                               s.CreationTime < model.ExpirationTime &&
-                               model.CreationTime < s.ExpirationTime);
-
-            if (overlappingSessions)
-            {
-                return Results.BadRequest("There is an overlapping session in the selected lecture hall.");
-            }
-
-            var newSession = new Session
-            {
-                CourseID = model.CourseID,
-                LectureHallID = model.LectureHallID,
-                SessionCode = model.SessionCode,
-                CreationTime = model.CreationTime,
-                ExpirationTime = model.ExpirationTime
-            };
-
-            dbContext.Sessions.Add(newSession);
-            await dbContext.SaveChangesAsync();
-
-            return Results.Ok(new { SessionID = newSession.SessionID, SessionCode = newSession.SessionCode });
         });
 
         app.MapPost("/api/attendance/check-in", [Authorize(Roles = "Student")] async (HttpContext context, AMSContext dbContext,IHubContext<AttendanceHub> hubContext , ILogger<Program> logger, CheckInModel model) =>
@@ -174,6 +192,96 @@ public static class SessionEndpoints
             return Results.Ok(checkedInStudents);
         });
 
+
+        app.MapGet("/api/session/active", [Authorize(Roles = "Lecturer")] async (HttpContext context, AMSContext dbContext, ILogger<Program> logger) =>
+        {
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            logger.LogInformation($"Fetching active session for user: {userId}");
+            var utcNow = DateTime.UtcNow;
+
+            var activeSession = await dbContext.Sessions
+                .Where(s => s.Course.Lecturer.UserID == userId && s.ExpirationTime > utcNow)
+                .OrderByDescending(s => s.CreationTime)
+                .Select(s => new {
+                    s.SessionID,
+                    s.SessionCode,
+                    s.CourseID,
+                    s.LectureHallID,
+                    s.CreationTime,
+                    s.ExpirationTime,
+                    s.LectureEndTime,
+                    RemainingTime = (int)(s.ExpirationTime - utcNow).TotalSeconds
+                })
+                .FirstOrDefaultAsync();
+
+            if (activeSession == null)
+            {
+                logger.LogInformation($"No active session found for user: {userId}");
+                return Results.NotFound(new { message = "No active session found" });
+            }
+
+            var result = new
+            {
+                activeSession.SessionID,
+                activeSession.SessionCode,
+                activeSession.CourseID,
+                activeSession.LectureHallID,
+                CreationTime = TimeZoneInfo.ConvertTimeFromUtc(activeSession.CreationTime, sriLankaTimeZone),
+                ExpirationTime = TimeZoneInfo.ConvertTimeFromUtc(activeSession.ExpirationTime, sriLankaTimeZone),
+                LectureEndTime = TimeZoneInfo.ConvertTimeFromUtc(activeSession.LectureEndTime, sriLankaTimeZone),
+                activeSession.RemainingTime
+            };
+
+            logger.LogInformation($"Active session found: {activeSession.SessionID}");
+            return Results.Ok(result);
+        });
+
+        app.MapPost("/api/session/end/{sessionId}", [Authorize(Roles = "Lecturer")] async (int sessionId, HttpContext context, AMSContext dbContext) =>
+        {
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var session = await dbContext.Sessions
+                .Include(s => s.Course)
+                .ThenInclude(c => c.Lecturer)
+                .FirstOrDefaultAsync(s => s.SessionID == sessionId && s.Course.Lecturer.UserID == userId);
+
+            if (session == null)
+            {
+                return Results.NotFound("Session not found or you don't have permission to end it.");
+            }
+
+            // Remove all related attendances
+            var attendances = await dbContext.Attendances
+                .Where(a => a.SessionID == sessionId)
+                .ToListAsync();
+            dbContext.Attendances.RemoveRange(attendances);
+
+            // Remove the session
+            dbContext.Sessions.Remove(session);
+
+            await dbContext.SaveChangesAsync();
+
+            return Results.Ok(new { message = "Session ended and all related data removed successfully" });
+        });
+
+
+        app.MapGet("/api/session/course-times/{courseId}", [Authorize(Roles = "Lecturer")] async (int courseId, AMSContext dbContext, ILogger<Program> logger) =>
+        {
+            logger.LogInformation($"Fetching course time for courseId: {courseId}");
+            var currentDay = DateTime.UtcNow.DayOfWeek;
+            var courseTime = await dbContext.CourseTimes
+                .Where(ct => ct.CourseID == courseId && ct.Day == currentDay)
+                .Select(ct => new { ct.StartTime, ct.EndTime })
+                .FirstOrDefaultAsync();
+
+            if (courseTime == null)
+            {
+                logger.LogWarning($"No course time found for courseId: {courseId} on day: {currentDay}");
+                return Results.NotFound("No course time found for today");
+            }
+
+            logger.LogInformation($"Course time found for courseId: {courseId}");
+            return Results.Ok(courseTime);
+        });
     }
     
 }
@@ -182,9 +290,10 @@ public class SessionCreationModel
 {
     public int CourseID { get; set; }
     public int LectureHallID { get; set; }
-    public string SessionCode { get; set; }
-    public DateTime CreationTime { get; set; }
-    public DateTime ExpirationTime { get; set; }
+    public string Date { get; set; }
+    public string LectureStartTime { get; set; }
+    public string LectureEndTime { get; set; }
+    public int QRCodeExpirationMinutes { get; set; }
 }
 public class CheckInModel
 {
