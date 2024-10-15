@@ -176,8 +176,7 @@ app.MapAttendanceReportEndpoints();
 app.MapHub<AttendanceHub>("/attendanceHub");
 
 
-// Configure Kestrel to listen on the port specified by the PORT environment variable
-app.Urls.Add($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "8080"}");
+
 app.Run();
 
 
