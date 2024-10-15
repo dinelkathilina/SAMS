@@ -1,7 +1,0 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "./SAMS/Dockerfile"
-
-[deploy]
-startCommand = "dotnet SAMS.dll"
-restartPolicyType = "ON_FAILURE"
