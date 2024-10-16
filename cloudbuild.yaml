@@ -5,7 +5,7 @@ steps:
 # Push the container image to Artifact Registry
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA']
-# Deploy container image to Cloud Run
+# Deploy container image to Cloud Run a
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
   args:
