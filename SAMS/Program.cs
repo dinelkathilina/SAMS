@@ -47,13 +47,12 @@ if (string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience) || stri
 
 
 builder.Services.AddDbContext<AMSContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configure Kestrel to listen on the port provided by Cloud Run
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrEmpty(connectionString))
-    {
-        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-    }
-    options.UseSqlServer(connectionString);
+    serverOptions.ListenAnyIP(int.Parse(port));
 });
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
