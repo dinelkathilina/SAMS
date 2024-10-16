@@ -27,7 +27,10 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 // Add services to the container.
 //builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddLogging();
-
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 
 builder.Configuration.AddEnvironmentVariables();
@@ -45,7 +48,12 @@ if (string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience) || stri
 
 builder.Services.AddDbContext<AMSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+// Configure Kestrel to listen on the port provided by Cloud Run
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(int.Parse(port));
+});
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
        .AddEntityFrameworkStores<AMSContext>()

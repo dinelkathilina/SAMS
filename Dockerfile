@@ -21,7 +21,8 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Make sure the app runs on the port Cloud Run expects
-ENV ASPNETCORE_URLS=http://+:8080
+ENV PORT 8080
+ENV ASPNETCORE_URLS=http://+:${PORT}
 
 # Run the application
 ENTRYPOINT ["dotnet", "SAMS.dll"]
