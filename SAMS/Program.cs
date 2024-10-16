@@ -13,6 +13,7 @@ using SAMS.Hubs;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,8 +30,18 @@ builder.Services.AddLogging();
 
 
 
-builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                     .AddEnvironmentVariables();
+builder.Configuration.AddEnvironmentVariables();
+// Update your JWT configuration
+var jwtIssuer = builder.Configuration["JWT:ValidIssuer"];
+var jwtAudience = builder.Configuration["JWT:ValidAudience"];
+var jwtSecret = builder.Configuration["JWT:Secret"];
+
+if (string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience) || string.IsNullOrEmpty(jwtSecret))
+{
+    throw new InvalidOperationException("JWT configuration is incomplete. Please check your environment variables.");
+}
+
+
 
 builder.Services.AddDbContext<AMSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -78,6 +89,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.SaveToken = true;
     options.RequireHttpsMetadata = false;
+
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
@@ -175,8 +187,8 @@ app.MapAttendanceReportEndpoints();
 
 app.MapHub<AttendanceHub>("/attendanceHub");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://0.0.0.0:{port}");
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+//app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();
 
