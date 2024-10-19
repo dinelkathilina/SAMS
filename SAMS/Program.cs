@@ -152,20 +152,26 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-    options.RoutePrefix = "swagger";
-});
-/* (options =>
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        options.RoutePrefix = string.Empty; // This makes Swagger UI the root page
-    });*/
+        options.RoutePrefix = "swagger";
+    });
+}
+else
+{
+    // For production, remove or comment out these lines
+    // app.UseSwagger();
+    // app.UseSwaggerUI(...);
+}
 
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
+// Replace the redirect to Swagger with a simple message for production
+app.MapGet("/", () => app.Environment.IsDevelopment()
+    ? Results.Redirect("/swagger/index.html")
+    : Results.Ok("API is running"));
 
 
 
@@ -190,7 +196,7 @@ app.MapAttendanceReportEndpoints();
 
 app.MapHub<AttendanceHub>("/attendanceHub");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();

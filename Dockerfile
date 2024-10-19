@@ -1,4 +1,4 @@
-# Use the official .NET 8 SDK image for building
+# Use the official .NET SDK image to build the project
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
@@ -20,9 +20,15 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Make sure the app runs on the port Cloud Run expects
-ENV PORT 8080
-ENV ASPNETCORE_URLS=http://+:${PORT}
+# Use a non-root user for better security
+USER app
 
-# Run the application
+# Expose port 5000 instead of 8080/8081
+EXPOSE 5000
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:5000
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
+# Set the entry point
 ENTRYPOINT ["dotnet", "SAMS.dll"]
