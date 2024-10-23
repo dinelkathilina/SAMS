@@ -53,7 +53,7 @@ jobs:
         image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/sams-repo/sams-app:${{ github.sha }}
         env_vars: |
           ASPNETCORE_ENVIRONMENT=Production
-          ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}
+          ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION }}
           JWT__ValidAudience=${{ secrets.JWT_VALID_AUDIENCE }}
           JWT__ValidIssuer=${{ secrets.JWT_VALID_ISSUER }}
           JWT__Secret=${{ secrets.JWT_SECRET }}
