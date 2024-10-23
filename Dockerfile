@@ -20,15 +20,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Use a non-root user for better security
-USER app
+# Set default port for both environments
+ENV PORT=8080
+ENV ASPNETCORE_URLS=http://+:8080
 
-# Expose port 5000 instead of 8080/8081
-EXPOSE 5000
-
-# Set environment variables
-ENV ASPNETCORE_URLS=http://+:5000
-ENV DOTNET_RUNNING_IN_CONTAINER=true
-
-# Set the entry point
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "SAMS.dll"]

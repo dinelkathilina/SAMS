@@ -1,4 +1,4 @@
-name: Docker CI/CD
+name: Google Cloud Run CI/CD
 
 on:
   push:
@@ -6,44 +6,57 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  PROJECT_ID: present-438611  # Your GCP project ID
+  GAR_LOCATION: us-central1   # Artifact Registry location
+  SERVICE: sams-service       # Cloud Run service name
+  REGION: us-central1        # Cloud Run service region
+
 jobs:
-  build-and-push:
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Login to DockerHub
-      uses: docker/login-action@v2
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Google Auth
+      id: auth
+      uses: 'google-github-actions/auth@v1'
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v1'
       with:
-        context: .
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/sams-app:latest
-        
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-    - name: Deploy to EC2
-      env:
-        PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-        HOSTNAME: ${{ secrets.EC2_HOST }}
-        USER_NAME: ${{ secrets.EC2_USERNAME }}
+        version: '>= 363.0.0'
+
+    - name: Authenticate Docker
       run: |
-        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-        ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/sams-app:latest
-          docker stop sams-container || true
-          docker rm sams-container || true
-          docker run -d -p 5000:5000 \
-          -e ConnectionStrings__DefaultConnection="${{ secrets.DB_CONNECTION_STRING }}" \
-          -e JWT__ValidAudience="${{ secrets.JWT_VALID_AUDIENCE }}" \
-          -e JWT__ValidIssuer="${{ secrets.JWT_VALID_ISSUER }}" \
-          -e JWT__Secret="${{ secrets.JWT_SECRET }}" \
-          --name sams-container ${{ secrets.DOCKERHUB_USERNAME }}/sams-app:latest
-        '
+        gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
+
+    - name: Build and Push Container
+      run: |
+        docker build -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/sams-repo/sams-app:${{ github.sha }} .
+        docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/sams-repo/sams-app:${{ github.sha }}
+
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@v1
+      with:
+        service: ${{ env.SERVICE }}
+        region: ${{ env.REGION }}
+        image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/sams-repo/sams-app:${{ github.sha }}
+        env_vars: |
+          ASPNETCORE_ENVIRONMENT=Production
+          ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}
+          JWT__ValidAudience=${{ secrets.JWT_VALID_AUDIENCE }}
+          JWT__ValidIssuer=${{ secrets.JWT_VALID_ISSUER }}
+          JWT__Secret=${{ secrets.JWT_SECRET }}
+
+    - name: Show Output
+      run: echo ${{ steps.deploy.outputs.url }}

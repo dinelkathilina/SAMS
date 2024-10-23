@@ -123,7 +123,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp", builder =>
     {
         builder.WithOrigins("https://students-attendance-management-system.vercel.app",
-            "https://students-attendance-management-system-dinelkathilinas-projects.vercel.app") // Replace with your React app's URL
+            "https://students-attendance-management-system-dinelkathilinas-projects.vercel.app",
+            "http://localhost:3000") // Replace with your React app's URL
                .AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials();
@@ -196,9 +197,9 @@ app.MapAttendanceReportEndpoints();
 
 app.MapHub<AttendanceHub>("/attendanceHub");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.Urls.Add($"http://0.0.0.0:{port}");
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Add($"http://+:{port}");
 app.Run();
 
 
