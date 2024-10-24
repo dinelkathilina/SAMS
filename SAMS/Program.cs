@@ -192,6 +192,7 @@ app.MapLecturerEndpoints();
 app.MapSessionEndpoints();
 app.MapAttendanceReportEndpoints();
 app.MapStudentAttendanceReportEndpoints();
+app.MapStudentScheduleEndpoints();
 
 //var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 //app.Run($"http://0.0.0.0:{port}");
